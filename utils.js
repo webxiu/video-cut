@@ -1,5 +1,7 @@
 const fs = require("fs");
 const path = require("path");
+const minimist = require("minimist");
+const config = require("./config");
 const { spawn } = require("child_process");
 
 // utils
@@ -51,5 +53,18 @@ module.exports = {
   },
   randomRange(min, max) {
     return parseInt(Math.random() * (max - min + 1) + min);
+  },
+  // 获取路径
+  getParams() {
+    const args = minimist(process.argv.slice(2));
+    const inputDir = args["inputPath"] || config.inputPath; // 输入路径
+    const outputDir = args["outPath"] || config.outputDir; // 输出路径
+    const logoPath = args["logoPath"] || config.logoPath; // logo路径
+    const endPath = args["endPath"] || config.endPath; // 片尾路径
+    const min = args["minLength"] || config.minLength; // 随机截最小时间
+    const max = args["maxLength"] || config.maxLength; // 随机截最大时间
+    const limit = args["minLimit"] || config.minLimit; // 低于限制时间， 视频截取不保留
+
+    return { inputDir, outputDir, logoPath, endPath, min, max, limit };
   },
 };
