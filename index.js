@@ -18,6 +18,7 @@ const inputPaths = utils.getFilePath(inputDir);
 const disTime = utils.randomRange(min, max); // 随机时间区间
 const endPaths = "C:\\Users\\EDY\\Desktop\\end\\end.mp4"; // 片尾视频
 fs.emptyDirSync(outRoot); // 情况输出目录
+fs.emptyDirSync("./temp"); // 情况输出目录
 
 console.log("==输入==>:", inputPaths);
 console.log("==输出==>:", outRoot, "\n");
@@ -35,9 +36,11 @@ inputPaths.forEach(async (dir, index) => {
     let tEnd = startTime + disTime;
     let endTime = tEnd > duration ? duration : tEnd;
     if (endTime - startTime < limit) return;
-    const outPath = path.join(outRoot, `${fileName}_${pos}_${utils.getNowTime()}_${ext}`);
+    const outPath = path.join("./temp", `${fileName}_${pos}_${utils.getNowTime()}${ext}`);
+    const realPath = path.join(outRoot, `${fileName}_${pos}_${utils.getNowTime()}${ext}`);
+    const realImg = path.join(outRoot, `${fileName}_${pos}_${utils.getNowTime()}.jpg`);
     // 测试命令
-    const cc = {
+    const command = {
       // 水印 分割 裁剪 缩放
       111: ["-i", dir, "-vf", `movie=${logoPath}[water_mark];[input_mark][water_mark]overlay=300:200,scale=iw*1.2:ih*1.2,drawtext=fontcolor=white:fontsize=40:text='我是水印文字':x=400:y=400:fontsize=60:fontcolor=yellow:shadowy=2,crop=1920:1080`, "-ss", `00:00:${startTime}`, "-to", `00:00:${endTime}`, "-acodec", "copy", "-y", outPath],
       // 封面
@@ -47,19 +50,28 @@ inputPaths.forEach(async (dir, index) => {
       concat: ["-i", `concat:${dir}|${endPaths}`, "-acodec", "copy", "-y", outPath],
       textLogo: ["-i", dir, "-vf", "movie=logo.png[water_mark];[input_mark][water_mark]overlay=300:200,drawtext=fontcolor=white:fontsize=40:text='我是水印文字':x=400:y=400:fontsize=60:fontcolor=yellow:shadowy=2,scale=iw*2:-2,crop=960:820:0:0,", "-ss", `00:00:${startTime}`, "-to", `00:00:${endTime}`, "-acodec", "copy", "-y", outPath],
     };
-    const command = cc["111"];
-    console.log(command);
 
-    const res = await utils.spawn(ffmpegPath, command);
+    const res = await utils.spawn(ffmpegPath, command["111"]);
     if (res.code === 0) {
       console.log(`第${index + 1}_${pos}个成功`, res);
     } else {
       console.log(`第${index + 1}_${pos}个失败`, res);
     }
     startTime += disTime;
-    const cc2 = {
-      concat: ["-i", `concat:${dir}|${endPaths}`, "-acodec", "copy", "-y", outPath],
+    const command2 = {
+      hebin: ["-i", outPath, "-c", "copy", "-vbsf", "h264_mp4toannexb", "-y", "1.ts"],
+      hebin2: ["-i", endPaths, "-c", "copy", "-vbsf", "h264_mp4toannexb", "-y", "2.ts"],
+      // 合并视频, 第10帧作为封面
+      concat: ["-i", `concat:1.ts|2.ts`, "-vf", "select='eq(n,9)',drawtext=fontcolor=white:fontsize=40:text='我是封面水印文字':x=400:y=400:fontsize=60:fontcolor=yellow:shadowy=2", "-vframes", "1", realImg, "-acodec", "copy", "-y", realPath],
     };
-    const res2 = await utils.spawn(ffmpegPath, command);
+
+    await utils.spawn(ffmpegPath, command2["hebin"]);
+    await utils.spawn(ffmpegPath, command2["hebin2"]);
+    const res2 = await utils.spawn(ffmpegPath, command2["concat"]);
+    if (res2.code === 0) {
+      console.log(`真实_第${index + 1}_${pos}个成功`, res2);
+    } else {
+      console.log(`真实_第${index + 1}_${pos}个失败`, res2);
+    }
   }
 });
