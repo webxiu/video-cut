@@ -19,16 +19,23 @@ module.exports = {
       });
     });
   },
-  getFilePath(rootPath) {
+  /**
+   * 获取目录下的所有文件路径
+   * @param {string} rootPath 扫描目录
+   * @param {Array<string>} suffixs 包含格式
+   * @returns 路径列表
+   */
+  getFilePath(rootPath, suffixs = [".mp4"]) {
     const filePaths = [];
     const findJsonFile = (dir) => {
       const files = fs.readdirSync(dir);
       files.forEach((name) => {
         const fPath = path.join(dir, name);
+        const ext = path.extname(fPath);
         const stat = fs.statSync(fPath);
         if (stat.isDirectory()) {
           findJsonFile(fPath);
-        } else if (stat.isFile()) {
+        } else if (stat.isFile() && suffixs.includes(ext)) {
           filePaths.push(fPath);
         }
       });

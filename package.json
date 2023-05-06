@@ -6,11 +6,26 @@
   "dependencies": {
     "fs-extra": "^6.0.0",
     "get-video-duration": "^4.1.0",
-    "minimist": "^1.2.8"
+    "minimist": "^1.2.8",
+    "pkg": "^5.8.1"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "build": "pkg package.json"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "scripts": [
+      "/**/*.js",
+      "*.png",
+      "*.exe"
+    ],
+    "targets": [
+      "node14-win-x64"
+    ],
+    "output": "我的.exe",
+    "outputPath": "dist"
   },
   "keywords": [],
   "author": "",

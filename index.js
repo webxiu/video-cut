@@ -32,8 +32,8 @@ inputPaths.forEach(async (dir, index) => {
     const realImg = path.join(outputDir, `${fileName}_${num}_${utils.getNowTime()}.jpg`);
 
     const command = {
-      // 水印 分割 裁剪 缩放
-      mian: ["-i", dir, "-vf", `movie=${logoPath}[water_mark];[input_mark][water_mark]overlay=300:200,scale=iw*1.2:ih*1.2,drawtext=fontcolor=white:fontsize=40:text='我是水印文字':x=400:y=400:fontsize=60:fontcolor=yellow:shadowy=2,crop=1920:1080`, "-ss", `00:00:${startTime}`, "-to", `00:00:${endTime}`, "-acodec", "copy", "-y", outTempPath],
+      // 宽屏:水印 分割 裁剪 缩放
+      mian: ["-i", dir, "-vf", `movie=${logoPath}[water_mark];[input_mark][water_mark]overlay=x=(W-w)/2:y=(H-h)/2,scale=iw*1.2:ih*1.2,drawtext=fontcolor=white:fontsize=40:text='我是水印文字':x=400:y=400:fontsize=60:fontcolor=yellow:shadowy=2,crop=1920:1080`, "-ss", `00:00:${startTime}`, "-to", `00:00:${endTime}`, "-acodec", "copy", "-y", outTempPath],
       // 视频转ts
       concat_1: ["-i", outTempPath, "-c", "copy", "-vbsf", "h264_mp4toannexb", "-y", "temp/1.ts"],
       concat_2: ["-i", endPath, "-c", "copy", "-vbsf", "h264_mp4toannexb", "-y", "temp/2.ts"],
