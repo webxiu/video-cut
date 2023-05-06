@@ -20,6 +20,20 @@
 
 `ffmpeg -i input.mp4 -vf "select='eq(n,9)',drawtext=fontfile=/path/to/font.ttf:text='测试封面'" -vframes 1 output.jpg`
 
+## 背景模糊
+
+`ffmpeg -i input.mp4 -lavfi "[0:v]scale=256/81*iw:256/81*ih,boxblur=luma_radius=min(h\,w)/40:luma_power=3:chroma_radius=min(cw\,ch)/40:chroma_power=1[bg];[bg][0:v]overlay=(W-w)/2:(H-h)/2,setsar=1,crop=w=iw*81/256"  output.mp4`
+
+const command = {
+// 宽屏:水印 分割 裁剪 缩放
+mian: ["-i", dir, "-vf", `movie=${logoPath}[water_mark];[input_mark][water_mark]overlay=x=(W-w)/2:y=(H-h)/2,scale=iw*1.2:ih*1.2,drawtext=fontcolor=white:fontsize=40:text='我是水印文字':x=400:y=400:fontsize=60:fontcolor=yellow:shadowy=2,crop=1920:1080`, "-ss", `00:00:${startTime}`, "-to", `00:00:${endTime}`, "-acodec", "copy", "-y", outTempPath],
+// 视频转 ts
+concat_1: ["-i", outTempPath, "-c", "copy", "-vbsf", "h264_mp4toannexb", "-y", "temp/1.ts"],
+concat_2: ["-i", endPath, "-c", "copy", "-vbsf", "h264_mp4toannexb", "-y", "temp/2.ts"],
+// 合并视频 封面(第 10 帧作为)
+concat: ["-i", `concat:temp/1.ts|temp/2.ts`, "-vf", "select='eq(n,9)',drawtext=fontcolor=white:fontsize=40:text='我是封面水印文字':x=400:y=400:fontsize=60:fontcolor=yellow:shadowy=2", "-vframes", "1", realImg, "-acodec", "copy", "-y", realPath],
+};
+
 - inputPath: 输入目录(读取该目录下的视频文件)
 - outPath: 输出目录
 - minLength: 随机截最小时间

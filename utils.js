@@ -2,11 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const minimist = require("minimist");
 const config = require("./config");
-const { spawn } = require("child_process");
+const { spawn, exec } = require("child_process");
 
 // utils
 module.exports = {
-  spawn(ffmpegPath, command) {
+  spawn(ffmpegPath, command, delay = 1000) {
     return new Promise((resolve, reject) => {
       const cp = spawn(ffmpegPath, [...command], { stdio: "inherit" });
       cp.on("data", (data) => resolve({ type: "data", data }));
@@ -15,7 +15,24 @@ module.exports = {
         let timer = setTimeout(() => {
           resolve({ type: "close", code, signal });
           clearTimeout(timer);
-        }, 1000);
+        }, delay);
+      });
+    });
+  },
+  exec(ffmpegPath, command) {
+    return new Promise((resolve, reject) => {
+      exec(`${ffmpegPath} ${command}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`error: ${error}`);
+          reject({ type: "error", error });
+          return;
+        }
+        stdout.on("data", (data) => {
+          console.log("===========", data);
+        });
+        resolve({ type: "stdout", stdout, stderr });
+        console.log(`stdout: ${stdout}`);
+        console.error(`stderr: ${stderr}`);
       });
     });
   },
@@ -66,12 +83,17 @@ module.exports = {
     const args = minimist(process.argv.slice(2));
     const inputDir = args["inputPath"] || config.inputPath; // 输入路径
     const outputDir = args["outPath"] || config.outputDir; // 输出路径
-    const logoPath = args["logoPath"] || config.logoPath; // logo路径
     const endPath = args["endPath"] || config.endPath; // 片尾路径
+    const logoPath = args["logoPath"] || config.logoPath; // 水印logo路径
+    const coverTitle = args["coverTitle"] || config.coverTitle; // 水印logo路径
+    const sticker = args["sticker"] || config.sticker; // mov贴纸
+    const cover = args["cover"] || config.cover; // 封面
     const min = args["minLength"] || config.minLength; // 随机截最小时间
     const max = args["maxLength"] || config.maxLength; // 随机截最大时间
     const limit = args["minLimit"] || config.minLimit; // 低于限制时间， 视频截取不保留
+    const split = args["split"] || config.split; // 低于限制时间， 视频截取不保留
+    const scale = args["scale"] || config.scale; // 低于限制时间， 视频截取不保留
 
-    return { inputDir, outputDir, logoPath, endPath, min, max, limit };
+    return { inputDir, outputDir, endPath, logoPath, coverTitle, sticker, cover, min, max, limit, split, scale };
   },
 };
