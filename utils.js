@@ -7,8 +7,10 @@ const { spawn, exec } = require("child_process");
 // utils
 module.exports = {
   spawn(ffmpegPath, command, delay = 1000) {
+    const cmd = command.split(" ");
+    console.log("\n====命令=====>:", command, "\n\n");
     return new Promise((resolve, reject) => {
-      const cp = spawn(ffmpegPath, [...command], { stdio: "inherit" });
+      const cp = spawn(ffmpegPath, [...cmd], { stdio: "inherit" });
       cp.on("data", (data) => resolve({ type: "data", data }));
       cp.on("error", (err) => reject({ type: "error", err }));
       cp.on("close", (code, signal) => {
@@ -27,12 +29,41 @@ module.exports = {
           reject({ type: "error", error });
           return;
         }
-        stdout.on("data", (data) => {
-          console.log("===========", data);
-        });
         resolve({ type: "stdout", stdout, stderr });
         console.log(`stdout: ${stdout}`);
         console.error(`stderr: ${stderr}`);
+      });
+    });
+  },
+  getFileInfo(ffprobePath, pathFile) {
+    return new Promise((resolve, reject) => {
+      const cmd = `${ffprobePath} -i ${pathFile} -v quiet -print_format json -show_format -show_streams`;
+      exec(cmd, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`error: ${error}`);
+          console.error(`stderr: ${stderr}`);
+          reject({ type: "error", error, stderr });
+          return;
+        }
+        resolve(JSON.parse(stdout));
+      });
+    });
+  },
+  /**
+   * 获取视频时长
+   * @param {string} ffprobePath ffprobe路径
+   * @param {string} pathFile 文件路径
+   * @returns 时长
+   */
+  execGetSec(ffprobePath, pathFile) {
+    return new Promise((resolve) => {
+      const cmd = `${ffprobePath} -v error -select_streams v:0 -show_entries stream=duration -of default=noprint_wrappers=1:nokey=1 ${pathFile}`;
+      exec(cmd, (err, stdout, stderr) => {
+        if (!err) {
+          resolve(parseInt(stdout));
+        } else {
+          resolve(0);
+        }
       });
     });
   },
@@ -84,6 +115,7 @@ module.exports = {
     const inputDir = args["inputPath"] || config.inputPath; // 输入路径
     const outputDir = args["outPath"] || config.outputDir; // 输出路径
     const endPath = args["endPath"] || config.endPath; // 片尾路径
+    const audioPath = args["audioPath"] || config.audioPath; // 片尾路径
     const logoPath = args["logoPath"] || config.logoPath; // 水印logo路径
     const coverTitle = args["coverTitle"] || config.coverTitle; // 水印logo路径
     const sticker = args["sticker"] || config.sticker; // mov贴纸
@@ -94,6 +126,6 @@ module.exports = {
     const split = args["split"] || config.split; // 低于限制时间， 视频截取不保留
     const scale = args["scale"] || config.scale; // 低于限制时间， 视频截取不保留
 
-    return { inputDir, outputDir, endPath, logoPath, coverTitle, sticker, cover, min, max, limit, split, scale };
+    return { inputDir, outputDir, endPath, audioPath, logoPath, coverTitle, sticker, cover, min, max, limit, split, scale };
   },
 };
